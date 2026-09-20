@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, CircleCheck, CreditCard, Headset, Lock, ShieldCheck, Star, Zap } from "lucide-react";
-import { PRODUCTS } from "@/lib/products";
+import { getCatalog } from "@/lib/catalog";
 import { SITE } from "@/lib/site";
 import ProductCard from "@/components/ProductCard";
 import Faq from "@/components/Faq";
 import DiscordIcon from "@/components/DiscordIcon";
+
+export const revalidate = 300;
 
 const STATS = [
   { value: "5.0", label: "Rating", icon: Star },
@@ -68,7 +70,9 @@ const FAQ = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const products = await getCatalog();
+
   return (
     <>
       {/* Hero */}
@@ -156,7 +160,7 @@ export default function Home() {
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {PRODUCTS.map((p) => (
+          {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
         </div>

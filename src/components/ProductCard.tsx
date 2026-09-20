@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { Check, Gem, Loader2, Minus, Plus, Rocket, ShoppingCart, Ticket, type LucideIcon } from "lucide-react";
-import { formatPrice, type PlanId, type Product } from "@/lib/products";
+import { formatPrice, type PlanId, type ResolvedProduct } from "@/lib/products";
 
-const ICONS: Record<Product["id"], LucideIcon> = {
+const ICONS: Record<ResolvedProduct["id"], LucideIcon> = {
   "nitro-tokens": Ticket,
   "discord-nitro": Rocket,
   "server-boosts": Gem,
 };
 
-export default function ProductCard({ product }: { product: Product }) {
+export default function ProductCard({ product }: { product: ResolvedProduct }) {
   const [planId, setPlanId] = useState<PlanId>(product.plans[0].id);
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -91,9 +91,9 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="mt-6 flex items-end justify-between border-t border-white/[0.06] pt-5">
         <div>
           <div className="text-xs uppercase tracking-wider text-muted-2">Total</div>
-          <div className="text-3xl font-black">{formatPrice(total)}</div>
+          <div className="text-3xl font-black">{formatPrice(total, plan.currency.toUpperCase())}</div>
           <div className="text-xs text-muted">
-            {formatPrice(plan.priceCents)} / {product.unit}
+            {formatPrice(plan.priceCents, plan.currency.toUpperCase())} / {product.unit}
           </div>
         </div>
         <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-black/20 p-1">
