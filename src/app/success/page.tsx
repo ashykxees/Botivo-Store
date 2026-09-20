@@ -3,6 +3,7 @@ import { ArrowRight, CircleCheck } from "lucide-react";
 import { SITE } from "@/lib/site";
 import { formatPrice } from "@/lib/products";
 import { getStripe } from "@/lib/stripe";
+import { orderNumber } from "@/lib/orders";
 import DiscordIcon from "@/components/DiscordIcon";
 
 export const metadata = { title: `Order confirmed | ${SITE.name}` };
@@ -15,7 +16,7 @@ async function loadOrder(sessionId: string | undefined): Promise<Order> {
     const s = await getStripe().checkout.sessions.retrieve(sessionId);
     const meta = s.metadata ?? {};
     return {
-      id: s.id,
+      id: orderNumber(s),
       product: `${meta.productName ?? "Order"} — ${meta.planLabel ?? ""}`.trim(),
       total: s.amount_total != null ? formatPrice(s.amount_total, (s.currency ?? "usd").toUpperCase()) : "—",
       email: s.customer_details?.email ?? null,
@@ -44,7 +45,7 @@ export default async function SuccessPage({ searchParams }: PageProps<"/success"
 
         {order && (
           <dl className="mt-6 space-y-2 rounded-xl border border-white/[0.06] bg-black/20 p-4 text-left text-sm">
-            <Row k="Order ID" v={<code className="break-all text-xs">{order.id}</code>} />
+            <Row k="Order #" v={<code className="break-all text-xs">{order.id}</code>} />
             <Row k="Product" v={order.product} />
             <Row k="Total" v={order.total} />
             {order.discord && <Row k="Discord" v={order.discord} />}
