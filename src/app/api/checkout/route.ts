@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPlan, getProduct } from "@/lib/products";
+import { resolvePlan } from "@/lib/catalog";
 import { SITE } from "@/lib/site";
 import { getStripe } from "@/lib/stripe";
 
@@ -13,34 +13,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const product = getProduct(body.productId ?? "");
-  const plan = product ? getPlan(product, body.planId ?? "") : undefined;
-  if (!product || !plan) {
+  const resolved = await resolvePlan(body.productId ?? "", body.planId ?? "");
+  if (!resolved) {
     return NextResponse.json({ error: "Unknown product or plan" }, { status: 400 });
   }
+  const { product, plan } = resolved;
 
   const quantity = Math.min(product.maxQuantity, Math.max(1, Math.floor(Number(body.quantity) || 1)));
   const origin = req.headers.get("origin") || SITE.url;
 
   try {
-    const session = await getStripe().checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
+    const adjustableQuantity = { enabled: true, minimum: 1, maximum: product.maxQuantity };
+    const lineItem = plan.stripePriceId
+      ? { price: plan.stripePriceId, quantity, adjustable_quantity: adjustableQuantity }
+      : {
           quantity,
-          adjustable_quantity: { enabled: true, minimum: 1, maximum: product.maxQuantity },
+          adjustable_quantity: adjustableQuantity,
           price_data: {
-            currency: SITE.currency,
+            currency: plan.currency,
             unit_amount: plan.priceCents,
             product_data: {
               name: `${product.name} — ${plan.label}`,
               description: product.tagline,
-              images: [`${SITE.url}/logo.png`],
+              ...(SITE.url.startsWith("https://") ? { images: [`${SITE.url}/logo.png`] } : {}),
               metadata: { productId: product.id, planId: plan.id },
             },
           },
-        },
-      ],
+        };
+    const session = await getStripe().checkout.sessions.create({
+      mode: "payment",
+      line_items: [lineItem],
       metadata: { productId: product.id, planId: plan.id, productName: product.name, planLabel: plan.label },
       custom_fields: [
         {
@@ -60,6 +62,9 @@ export async function POST(req: Request) {
     const message = err instanceof Error ? err.message : "Stripe error";
     console.error("[checkout]", message);
     const status = message.includes("STRIPE_SECRET_KEY") ? 503 : 500;
-    return NextResponse.json({ error: status === 503 ? "Checkout is not configured yet" : "Unable to start checkout" }, { status });
+    return NextResponse.json(
+      { error: status === 503 ? "Checkout is not configured yet" : `Unable to start checkout: ${message}` },
+      { status },
+    );
   }
 }

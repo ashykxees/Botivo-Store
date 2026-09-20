@@ -4,7 +4,8 @@ export type ProductId = "nitro-tokens" | "discord-nitro" | "server-boosts";
 export type Plan = {
   id: PlanId;
   label: string;
-  priceCents: number;
+  fallbackCents: number;
+  priceEnv: string;
   badge?: string;
 };
 
@@ -17,6 +18,16 @@ export type Product = {
   features: string[];
   plans: Plan[];
   maxQuantity: number;
+};
+
+export type ResolvedPlan = Plan & {
+  priceCents: number;
+  currency: string;
+  stripePriceId: string | null;
+};
+
+export type ResolvedProduct = Omit<Product, "plans"> & {
+  plans: ResolvedPlan[];
 };
 
 function envPrice(key: string, fallbackCents: number): number {
@@ -36,8 +47,19 @@ export const PRODUCTS: Product[] = [
     unit: "token",
     features: ["Nitro active on delivery", "Full email access", "Instant delivery", "Replacement warranty"],
     plans: [
-      { id: "1m", label: "1 Month", priceCents: envPrice("PRICE_NITRO_TOKENS_1M", 249) },
-      { id: "3m", label: "3 Months", priceCents: envPrice("PRICE_NITRO_TOKENS_3M", 599), badge: "Best value" },
+      {
+        id: "1m",
+        label: "1 Month",
+        fallbackCents: envPrice("PRICE_NITRO_TOKENS_1M", 249),
+        priceEnv: "STRIPE_PRICE_NITRO_TOKENS_1M",
+      },
+      {
+        id: "3m",
+        label: "3 Months",
+        fallbackCents: envPrice("PRICE_NITRO_TOKENS_3M", 599),
+        priceEnv: "STRIPE_PRICE_NITRO_TOKENS_3M",
+        badge: "Best value",
+      },
     ],
     maxQuantity: 50,
   },
@@ -50,8 +72,19 @@ export const PRODUCTS: Product[] = [
     unit: "subscription",
     features: ["Gift link or direct apply", "2 free server boosts", "No login required", "Replacement warranty"],
     plans: [
-      { id: "1m", label: "1 Month", priceCents: envPrice("PRICE_DISCORD_NITRO_1M", 599) },
-      { id: "3m", label: "3 Months", priceCents: envPrice("PRICE_DISCORD_NITRO_3M", 1499), badge: "Popular" },
+      {
+        id: "1m",
+        label: "1 Month",
+        fallbackCents: envPrice("PRICE_DISCORD_NITRO_1M", 599),
+        priceEnv: "STRIPE_PRICE_DISCORD_NITRO_1M",
+      },
+      {
+        id: "3m",
+        label: "3 Months",
+        fallbackCents: envPrice("PRICE_DISCORD_NITRO_3M", 1499),
+        priceEnv: "STRIPE_PRICE_DISCORD_NITRO_3M",
+        badge: "Popular",
+      },
     ],
     maxQuantity: 10,
   },
@@ -64,8 +97,19 @@ export const PRODUCTS: Product[] = [
     unit: "boost",
     features: ["Applied within minutes", "Works on any server", "14 boosts = Level 3", "Replacement warranty"],
     plans: [
-      { id: "1m", label: "1 Month", priceCents: envPrice("PRICE_SERVER_BOOSTS_1M", 349) },
-      { id: "3m", label: "3 Months", priceCents: envPrice("PRICE_SERVER_BOOSTS_3M", 899), badge: "Best value" },
+      {
+        id: "1m",
+        label: "1 Month",
+        fallbackCents: envPrice("PRICE_SERVER_BOOSTS_1M", 349),
+        priceEnv: "STRIPE_PRICE_SERVER_BOOSTS_1M",
+      },
+      {
+        id: "3m",
+        label: "3 Months",
+        fallbackCents: envPrice("PRICE_SERVER_BOOSTS_3M", 899),
+        priceEnv: "STRIPE_PRICE_SERVER_BOOSTS_3M",
+        badge: "Best value",
+      },
     ],
     maxQuantity: 14,
   },
