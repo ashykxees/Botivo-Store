@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Gem, Loader2, Minus, Plus, Rocket, ShoppingCart, Ticket, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { Check, Gem, Minus, Plus, Rocket, ShoppingCart, Ticket, type LucideIcon } from "lucide-react";
 import { formatPrice, type PlanId, type ResolvedProduct } from "@/lib/products";
 
 const ICONS: Record<ResolvedProduct["id"], LucideIcon> = {
@@ -13,30 +14,10 @@ const ICONS: Record<ResolvedProduct["id"], LucideIcon> = {
 export default function ProductCard({ product }: { product: ResolvedProduct }) {
   const [planId, setPlanId] = useState<PlanId>(product.plans[0].id);
   const [qty, setQty] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const plan = product.plans.find((p) => p.id === planId) ?? product.plans[0];
   const total = plan.priceCents * qty;
   const Icon = ICONS[product.id];
-
-  async function buy() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: product.id, planId, quantity: qty }),
-      });
-      const data: { url?: string; error?: string } = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error || "Checkout failed");
-      window.location.href = data.url;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="card card-hover flex flex-col p-6">
@@ -117,11 +98,9 @@ export default function ProductCard({ product }: { product: ResolvedProduct }) {
         </div>
       </div>
 
-      <button type="button" onClick={buy} disabled={loading} className="btn-primary mt-4 w-full">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-        {loading ? "Redirecting to Stripe…" : "Buy now"}
-      </button>
-      {error && <p className="mt-2 text-center text-xs text-red-400">{error}</p>}
+      <Link href={`/checkout/${product.id}/${plan.id}?qty=${qty}`} className="btn-primary mt-4 w-full">
+        <ShoppingCart className="h-4 w-4" /> Buy now
+      </Link>
     </div>
   );
 }

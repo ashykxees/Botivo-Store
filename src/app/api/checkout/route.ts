@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { resolvePlan } from "@/lib/catalog";
 import { SITE } from "@/lib/site";
 import { getStripe } from "@/lib/stripe";
 
-type Body = { productId?: string; planId?: string; quantity?: number };
+type Body = {
+  productId?: string;
+  planId?: string;
+  quantity?: number;
+  email?: string;
+  discordUsername?: string;
+  promotionCodeId?: string;
+};
 
 export async function POST(req: Request) {
   let body: Body;
@@ -11,6 +19,15 @@ export async function POST(req: Request) {
     body = (await req.json()) as Body;
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  const email = body.email?.trim() ?? "";
+  const discordUsername = body.discordUsername?.trim() ?? "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Enter a valid email address" }, { status: 400 });
+  }
+  if (!discordUsername) {
+    return NextResponse.json({ error: "Discord username is required" }, { status: 400 });
   }
 
   const resolved = await resolvePlan(body.productId ?? "", body.planId ?? "");
@@ -40,22 +57,27 @@ export async function POST(req: Request) {
             },
           },
         };
-    const session = await getStripe().checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "payment",
       line_items: [lineItem],
-      metadata: { productId: product.id, planId: plan.id, productName: product.name, planLabel: plan.label },
-      custom_fields: [
-        {
-          key: "discord_username",
-          label: { type: "custom", custom: "Discord username (for delivery)" },
-          type: "text",
-          optional: false,
-        },
-      ],
-      allow_promotion_codes: true,
+      customer_email: email,
+      metadata: {
+        productId: product.id,
+        planId: plan.id,
+        productName: product.name,
+        planLabel: plan.label,
+        discord_username: discordUsername,
+      },
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/cancel`,
-    });
+      cancel_url: `${origin}/cancel?product=${product.id}&plan=${plan.id}&qty=${quantity}`,
+    };
+    if (body.promotionCodeId?.trim()) {
+      sessionParams.discounts = [{ promotion_code: body.promotionCodeId.trim() }];
+    } else {
+      sessionParams.allow_promotion_codes = true;
+    }
+
+    const session = await getStripe().checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
