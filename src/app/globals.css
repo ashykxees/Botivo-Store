@@ -24,10 +24,12 @@ body {
 }
 
 .container-x {
-  @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8;
+  box-sizing: border-box;
 }
 
 .glass {
+  box-sizing: border-box;
   background: rgba(10, 18, 38, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -38,6 +40,7 @@ body {
 }
 
 .card {
+  box-sizing: border-box;
   background: linear-gradient(180deg, rgba(14, 24, 50, 0.9), rgba(8, 14, 32, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 20px 50px -30px rgba(0, 0, 0, 0.8);

@@ -20,7 +20,10 @@ async function loadOrder(sessionId: string | undefined): Promise<Order> {
       product: `${meta.productName ?? "Order"} — ${meta.planLabel ?? ""}`.trim(),
       total: s.amount_total != null ? formatPrice(s.amount_total, (s.currency ?? "usd").toUpperCase()) : "—",
       email: s.customer_details?.email ?? null,
-      discord: s.custom_fields?.find((f) => f.key === "discord_username")?.text?.value ?? null,
+      discord:
+        s.metadata?.discord_username ??
+        s.custom_fields?.find((f) => f.key === "discord_username")?.text?.value ??
+        null,
     };
   } catch {
     return null;

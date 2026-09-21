@@ -40,7 +40,9 @@ async function notifyDiscord(sessionId: string) {
   const currency = (session.currency ?? "usd").toUpperCase();
   const email = session.customer_details?.email ?? session.customer_email ?? "—";
   const discordUsername =
-    session.custom_fields?.find((f) => f.key === "discord_username")?.text?.value ?? "";
+    session.metadata?.discord_username ??
+    session.custom_fields?.find((f) => f.key === "discord_username")?.text?.value ??
+    "";
 
   const pi = typeof session.payment_intent === "string" ? null : session.payment_intent;
   const pm = pi && typeof pi.payment_method !== "string" ? pi.payment_method : null;
