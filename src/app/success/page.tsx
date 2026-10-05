@@ -4,6 +4,7 @@ import { SITE } from "@/lib/site";
 import { formatPrice } from "@/lib/products";
 import { getStripe } from "@/lib/stripe";
 import { orderNumber } from "@/lib/orders";
+import CopyButton from "@/components/CopyButton";
 import DiscordIcon from "@/components/DiscordIcon";
 
 export const metadata = { title: `Order confirmed | ${SITE.name}` };
@@ -42,13 +43,21 @@ export default async function SuccessPage({ searchParams }: PageProps<"/success"
         </div>
         <h1 className="mt-5 text-3xl font-black tracking-tight">Payment successful</h1>
         <p className="mt-2 text-sm text-muted">
-          Thanks for shopping with {SITE.name}. Your order is being processed — join our Discord and open a{" "}
-          <strong className="text-white">Claim Order</strong> ticket with your order ID if you need anything.
+          Thank you for your purchase! Please copy your order ID and create a ticket in our Discord server to
+          receive your order.
         </p>
 
         {order && (
           <dl className="mt-6 space-y-2 rounded-xl border border-white/[0.06] bg-black/20 p-4 text-left text-sm">
-            <Row k="Order #" v={<code className="break-all text-xs">{order.id}</code>} />
+            <Row
+              k="Order #"
+              v={
+                <span className="inline-flex items-center gap-2">
+                  <code className="break-all text-xs">{order.id}</code>
+                  <CopyButton value={order.id} label="Copy order ID" />
+                </span>
+              }
+            />
             <Row k="Product" v={order.product} />
             <Row k="Total" v={order.total} />
             {order.discord && <Row k="Discord" v={order.discord} />}
