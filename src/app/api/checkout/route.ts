@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { resolvePlan } from "@/lib/catalog";
 import { SITE } from "@/lib/site";
 import { getStripe } from "@/lib/stripe";
+import { minQuantityFor } from "@/lib/products";
 
 type Body = {
   productId?: string;
@@ -36,11 +37,15 @@ export async function POST(req: Request) {
   }
   const { product, plan } = resolved;
 
-  const quantity = Math.min(product.maxQuantity, Math.max(1, Math.floor(Number(body.quantity) || 1)));
+  const minQuantity = minQuantityFor(plan.priceCents);
+  const quantity = Math.min(
+    product.maxQuantity,
+    Math.max(minQuantity, Math.floor(Number(body.quantity) || 1)),
+  );
   const origin = req.headers.get("origin") || SITE.url;
 
   try {
-    const adjustableQuantity = { enabled: true, minimum: 1, maximum: product.maxQuantity };
+    const adjustableQuantity = { enabled: true, minimum: minQuantity, maximum: product.maxQuantity };
     const lineItem = plan.stripePriceId
       ? { price: plan.stripePriceId, quantity, adjustable_quantity: adjustableQuantity }
       : {
