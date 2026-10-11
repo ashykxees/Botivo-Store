@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Check, ChevronDown, CreditCard, Loader2, Lock, Minus, Plus, Tag } from "lucide-react";
-import { formatPrice, type Product, type ResolvedPlan } from "@/lib/products";
+import { formatPrice, minQuantityFor, type Product, type ResolvedPlan } from "@/lib/products";
 
 type Coupon = {
   code: string;
@@ -57,6 +57,7 @@ export default function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
 
   const currency = plan.currency.toUpperCase();
+  const minQuantity = minQuantityFor(plan.priceCents);
   const subtotalCents = plan.priceCents * quantity;
   const discountCents = coupon
     ? coupon.percentOff != null
@@ -66,7 +67,7 @@ export default function CheckoutForm({
   const totalCents = Math.max(0, subtotalCents - discountCents);
 
   function updateQuantity(next: number) {
-    const nextQuantity = Math.min(product.maxQuantity, Math.max(1, next));
+    const nextQuantity = Math.min(product.maxQuantity, Math.max(minQuantity, next));
     setQuantity(nextQuantity);
     setCoupon(null);
     setCouponMessage(null);
@@ -241,7 +242,7 @@ export default function CheckoutForm({
               <div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted">Quantity</span>
-                  <span className="text-[11px] text-muted-2">(Min: 1, Max: {product.maxQuantity})</span>
+                  <span className="text-[11px] text-muted-2">(Min: {minQuantity}, Max: {product.maxQuantity})</span>
                 </div>
                 <div className="mt-1.5 flex items-center justify-between rounded-xl border border-white/[0.1] bg-black/25 p-1">
                   <button

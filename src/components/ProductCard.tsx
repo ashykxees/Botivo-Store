@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Check, Gem, Minus, Plus, Rocket, ShoppingCart, Ticket, type LucideIcon } from "lucide-react";
-import { formatPrice, type PlanId, type ResolvedProduct } from "@/lib/products";
+import { formatPrice, minQuantityFor, type PlanId, type ResolvedProduct } from "@/lib/products";
 
 const ICONS: Record<ResolvedProduct["id"], LucideIcon> = {
   "nitro-tokens": Ticket,
@@ -13,9 +13,10 @@ const ICONS: Record<ResolvedProduct["id"], LucideIcon> = {
 
 export default function ProductCard({ product }: { product: ResolvedProduct }) {
   const [planId, setPlanId] = useState<PlanId>(product.plans[0].id);
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(minQuantityFor(product.plans[0].priceCents));
 
   const plan = product.plans.find((p) => p.id === planId) ?? product.plans[0];
+  const minQuantity = minQuantityFor(plan.priceCents);
   const total = plan.priceCents * qty;
   const Icon = ICONS[product.id];
 
@@ -41,7 +42,10 @@ export default function ProductCard({ product }: { product: ResolvedProduct }) {
             <button
               key={p.id}
               type="button"
-              onClick={() => setPlanId(p.id)}
+              onClick={() => {
+                setPlanId(p.id);
+                setQty((q) => Math.min(product.maxQuantity, Math.max(minQuantityFor(p.priceCents), q)));
+              }}
               className={`relative rounded-lg px-3 py-2.5 text-sm font-semibold transition-all ${
                 active ? "bg-brand text-white shadow-[0_8px_20px_-8px_rgba(30,144,255,0.8)]" : "text-muted hover:text-white"
               }`}
@@ -81,7 +85,7 @@ export default function ProductCard({ product }: { product: ResolvedProduct }) {
           <button
             type="button"
             aria-label="Decrease quantity"
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            onClick={() => setQty((q) => Math.max(minQuantity, q - 1))}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-white/5 hover:text-white"
           >
             <Minus className="h-4 w-4" />

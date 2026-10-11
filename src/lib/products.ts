@@ -30,6 +30,12 @@ export type ResolvedProduct = Omit<Product, "plans"> & {
   plans: ResolvedPlan[];
 };
 
+export const STRIPE_MIN_CHARGE_CENTS = 50;
+
+export function minQuantityFor(priceCents: number): number {
+  return priceCents > 0 ? Math.max(1, Math.ceil(STRIPE_MIN_CHARGE_CENTS / priceCents)) : 1;
+}
+
 function envPrice(key: string, fallbackCents: number): number {
   const raw = process.env[key];
   if (!raw) return fallbackCents;
@@ -50,7 +56,7 @@ export const PRODUCTS: Product[] = [
       {
         id: "1m",
         label: "1 Month",
-        fallbackCents: envPrice("PRICE_NITRO_TOKENS_1M", 249),
+        fallbackCents: envPrice("PRICE_NITRO_TOKENS_1M", 36),
         priceEnv: "STRIPE_PRICE_NITRO_TOKENS_1M",
       },
       {
